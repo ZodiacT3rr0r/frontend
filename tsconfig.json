@@ -35,7 +35,7 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force"
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"],
   "types": ["react", "react-dom"],
   "files": [],
