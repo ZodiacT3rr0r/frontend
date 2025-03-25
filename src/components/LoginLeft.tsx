@@ -13,7 +13,7 @@ const LoginLeft = () => {
     <div className="hidden lg:flex justify-center pt-4 items-center h-screen w-1/2 border-r border-gray-800 bg-transparent relative text-white">
       <div className="relative w-[474px] h-[322px]">
         {/* Feature Summary */}
-        <div className="relative z-10 w-[447px] h-[170px] bg-[#242424] rounded-3xl p-6">
+        <div className="relative z-8 w-[447px] h-[170px] border border-gray-800 bg-[#242424] shadow-[4px_4px_10px_rgba(0,0,0,0.2)] shadow-gray-800 rounded-3xl p-6">
           <div className="flex items-center gap-2 border-b border-gray-200 pb-5 text-lg font-bold">
             <img src="/logo-blue.svg" alt="App Logo" className="w-8 h-8" />
             <p>Taskpilot</p>
@@ -29,7 +29,7 @@ const LoginLeft = () => {
         </div>
 
         {/* Stats Details */}
-        <div className="absolute bottom-0 z-8 right-0 w-[265px] h-[164px] bg-[#242424]  rounded-3xl p-4 flex flex-col justify-between">
+        <div className="absolute bottom-0 z-10 right-0 w-[265px] h-[164px] border border-gray-800 bg-[#242424] shadow-[4px_4px_10px_rgba(0,0,0,0.2)] shadow-gray-800  rounded-3xl p-4 flex flex-col justify-between">
           <div className="relative">
             <img src="/pie.svg" alt="Pie Chart" className="w-16 h-16" />
             <p className="text-sm font-bold mt-2">

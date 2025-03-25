@@ -40,7 +40,7 @@ const AuthOptions: React.FC<AuthOptionsProps> = ({ option, selected }) => {
         </>
       )}
       
-      <button className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg">
+      <button className="mt-4 px-6 py-2 bg-blue-600 font-semibold text-white rounded-lg cursor-pointer">
         {selected === "Login" ? "Login" : "Sign Up"}
       </button>
 
@@ -66,7 +66,7 @@ const AuthHeader: React.FC<HeaderProps> = ({ selected, setSelected }) => {
   return (
     <div className="flex flex-col justify-center items-center gap-5 border-b border-gray-300 p-9">
       <div className="flex flex-col gap-9">
-        <div className="flex gap-4 h-10 items-center justify-center text-2xl font-normal">
+        <div className="flex gap-2 h-10 items-center justify-center text-4xl tracking-wider font-transcity">
           <img src="/logo-blue.svg" alt="Logo" className="w-12" />
           Taskpilot
         </div>

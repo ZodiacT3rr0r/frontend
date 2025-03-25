@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: Transcity;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./src/assets/transcity.regular.otf") format("opentype");
+}
+
+@theme {
+  --font-transcity: "Transcity";
+}
