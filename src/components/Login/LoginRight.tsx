@@ -1,8 +1,8 @@
 import { useEffect, useState, ComponentType } from "react";
-import SlideSelect from "./SlideSelect";
-import options from "../data/SigninOpts";
-import Input from "./Input";
-import { Tagline } from "./Tagline";
+import SlideSelect from "@components/Input/SlideSelect";
+import options from "@data/SigninOpts";
+import Input from "@components/Input/Input";
+import { Tagline } from "@components/Misc/Tagline";
 
 // Types
 type Option = {
@@ -32,7 +32,7 @@ const AuthOptions: React.FC<AuthOptionsProps> = ({ option, selected }) => {
         </>
       ) : (
         <>
-          <div className="flex justify-between w-full">
+          <div className="flex justify-between gap-2 w-full">
             <Input label="First name" />
             <Input label="Last name" />
           </div>
@@ -50,10 +50,10 @@ const AuthOptions: React.FC<AuthOptionsProps> = ({ option, selected }) => {
           return (
             <div
               key={index}
-              className="flex gap-4 justify-center items-center w-1/2 h-6 border border-gray-400 rounded-lg text-lg font-semibold py-4 active:bg-[#121212] cursor-pointer"
+              className="flex gap-4 justify-center items-center w-7/12 lg:w-2/3 h-6 border border-gray-400 rounded-lg text-lg font-semibold py-4  active:bg-[#121212] cursor-pointer"
             >
               <Icon />
-              <div>{opt.text}</div>
+              <div className="hidden min-[700px]:block min-[1024px]:hidden min-[1200px]:block">{opt.text}</div>
             </div>
           );
         })}
@@ -86,12 +86,12 @@ const LoginRight: React.FC = () => {
   }, [selected]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-8 h-screen px-6 w-full md:w-1/2 text-white bg-transparent">
-      <div className="bg-[#1E1E1E] rounded-xl w-4/5">
+    <div className="flex flex-col items-center justify-center gap-8 h-screen w-full lg:w-1/2 text-white bg-transparent ">
+      <div className="bg-[#1E1E1E] px-6 rounded-xl w-4/5 max-w-[550px]">
         <AuthHeader selected={selected} setSelected={setSelected} />
         <AuthOptions option={option} selected={selected}/>
       </div>
-      <p>
+      <p className="px-6">
         By signing up you agree to the <a href="#" className="font-bold text-white underline">Privacy Policy</a>
       </p>
     </div>

@@ -1,5 +1,5 @@
-import Plane from "./911";
-import Radar from "./Radar";
+import Plane from "@components/Misc/911";
+import Radar from "@components/Misc/Radar";
 
 const LoginLeft = () => {
 
