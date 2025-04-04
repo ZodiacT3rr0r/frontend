@@ -4,19 +4,19 @@ export enum IssueType {
   STORY = "story",
 }
 
-export enum IssueStatus {
+export enum TaskStatus {
   BACKLOG = "backlog",
   SELECTED = "selected",
-  INPROGRESS = "inprogress",
+  IN_PROGRESS = "inprogress",
   DONE = "done",
 }
 
 export enum IssuePriority {
-  HIGHEST = "5",
-  HIGH = "4",
-  MEDIUM = "3",
-  LOW = "2",
-  LOWEST = "1",
+  P5 = "5",
+  P4 = "4",
+  P3 = "3",
+  P2 = "2",
+  P1 = "1",
 }
 
 export const IssueTypeCopy: Record<IssueType, string> = {
@@ -25,17 +25,17 @@ export const IssueTypeCopy: Record<IssueType, string> = {
   [IssueType.STORY]: "Story",
 };
 
-export const IssueStatusCopy: Record<IssueStatus, string> = {
-  [IssueStatus.BACKLOG]: "Backlog",
-  [IssueStatus.SELECTED]: "Selected for development",
-  [IssueStatus.INPROGRESS]: "In progress",
-  [IssueStatus.DONE]: "Done",
+export const TaskStatusCopy: Record<TaskStatus, string> = {
+  [TaskStatus.BACKLOG]: "Backlog",
+  [TaskStatus.SELECTED]: "Selected for Development",
+  [TaskStatus.IN_PROGRESS]: "In Progress",
+  [TaskStatus.DONE]: "Done",
 };
 
 export const IssuePriorityCopy: Record<IssuePriority, string> = {
-  [IssuePriority.HIGHEST]: "Highest",
-  [IssuePriority.HIGH]: "High",
-  [IssuePriority.MEDIUM]: "Medium",
-  [IssuePriority.LOW]: "Low",
-  [IssuePriority.LOWEST]: "Lowest",
+  [IssuePriority.P5]: "P5",
+  [IssuePriority.P4]: "P4",
+  [IssuePriority.P3]: "P3",
+  [IssuePriority.P2]: "P2",
+  [IssuePriority.P1]: "P1",
 };

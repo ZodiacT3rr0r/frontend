@@ -4,6 +4,7 @@ import Home from "@pages/Home";
 import Background from "@components/Background";
 import { Navbar } from "@components/Navbar";
 import { Add } from "./pages/Add";
+import { Tasks } from "./pages/Tasks";
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/add-new" element={<Add />} />
+            <Route path="/tasks" element={<Tasks />} />
           </Routes>
         </div>
       </Router>
