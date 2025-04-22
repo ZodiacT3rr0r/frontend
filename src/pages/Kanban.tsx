@@ -13,12 +13,59 @@ import {
   TaskType,
   TaskWorkflowStatus,
   TaskPriority,
-  TaskTypeCopy,
-  TaskWorkflowStatusCopy,
-  TaskPriorityCopy,
-} from "@data/Types";
-import { TaskSeverity } from "../data/Types";
+  TaskSeverity,
+  Task,
+} from "../data/Types";
+import {
+  mockTasks,
+  addTask,
+  saveAllData,
+  updateTask,
+  deleteTask,
+} from "../data/mockdata";
 
+// Type mapping between Task status and Kanban columns
+const statusToColumn = (status: TaskWorkflowStatus): ColumnType => {
+  switch (status) {
+    case TaskWorkflowStatus.BACKLOG:
+      return "backlog";
+    case TaskWorkflowStatus.SELECTED:
+      return "todo";
+    case TaskWorkflowStatus.IN_PROGRESS:
+      return "doing";
+    case TaskWorkflowStatus.DONE:
+      return "done";
+    default:
+      return "backlog";
+  }
+};
+
+// Map from column back to TaskWorkflowStatus
+const columnToStatus = (column: ColumnType): TaskWorkflowStatus => {
+  switch (column) {
+    case "backlog":
+      return TaskWorkflowStatus.BACKLOG;
+    case "todo":
+      return TaskWorkflowStatus.SELECTED;
+    case "doing":
+      return TaskWorkflowStatus.IN_PROGRESS;
+    case "done":
+      return TaskWorkflowStatus.DONE;
+  }
+};
+
+// Convert a Task to CardType
+const taskToCard = (task: Task): CardType => {
+  return {
+    id: task.id,
+    title: task.problem_statement,
+    column: statusToColumn(task.status),
+    type: task.type,
+    status: task.status,
+    priority: task.priority,
+    severity: task.severity,
+  };
+};
 
 export const CustomKanban = () => {
   return (
@@ -32,9 +79,9 @@ const updateBackend = (updatedCards: CardType[]) => {
   fetch(`http://localhost:3000/cards`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(updatedCards)
+    body: JSON.stringify(updatedCards),
   });
 };
 
@@ -42,13 +89,31 @@ const Board = () => {
   const [cards, setCards] = useState<CardType[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/cards`) // Use port 3001 for Mockoon
-      .then((response) => response.json())
-      .then((data) => setCards(data.cards)) // Access the cards array property
-      .catch((error) => {
-        console.error('Fetch error:', error);
-        setCards(DEFAULT_CARDS);
-      });
+    // Check for and filter out duplicate tasks
+    const taskIds = new Set<string>();
+    const uniqueTasks: Task[] = [];
+
+    mockTasks.forEach((task) => {
+      if (!taskIds.has(task.id)) {
+        taskIds.add(task.id);
+        uniqueTasks.push(task);
+      } else {
+        console.warn(
+          `Skipping duplicate task with ID: ${task.id} in Kanban view`
+        );
+      }
+    });
+
+    // Convert unique tasks to card format
+    const initialCards = uniqueTasks.map(taskToCard);
+    setCards(initialCards);
+    console.log(
+      "Loaded",
+      initialCards.length,
+      "unique tasks out of",
+      mockTasks.length,
+      "total tasks"
+    );
   }, []);
 
   return (
@@ -109,40 +174,49 @@ const Column = ({
 
   const handleDragEnd = (e: DragEvent) => {
     const cardId = e.dataTransfer.getData("cardId");
-  
+
     setActive(false);
     clearHighlights();
-  
+
     const indicators = getIndicators();
     const { element } = getNearestIndicator(e, indicators);
-  
+
     const before = element.dataset.before || "-1";
-  
+
     if (before !== cardId) {
       let copy = [...cards];
-  
+
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
+
+      // Update the column (and corresponding status)
+      const oldColumn = cardToTransfer.column;
       cardToTransfer = { ...cardToTransfer, column };
-  
+
+      // Update the actual task status in mockTasks when column changes
+      if (oldColumn !== column) {
+        const newStatus = columnToStatus(column);
+        // Use updateTask instead of direct modification
+        updateTask(cardId, { status: newStatus });
+        console.log(`Updated task ${cardId} status to ${newStatus}`);
+      }
+
       copy = copy.filter((c) => c.id !== cardId);
-  
+
       const moveToBack = before === "-1";
-  
+
       if (moveToBack) {
         copy.push(cardToTransfer);
       } else {
         const insertAtIndex = copy.findIndex((el) => el.id === before);
         if (insertAtIndex === -1) return;
-  
+
         copy.splice(insertAtIndex, 0, cardToTransfer);
       }
-  
+
       setCards(copy);
-      updateBackend(copy);
     }
   };
-  
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -212,9 +286,7 @@ const Column = ({
     <div className="w-56 shrink-0">
       <div className="mb-3 flex items-center justify-start gap-4">
         <h3 className={`font-medium ${headingColor}`}>{title}</h3>
-        <span className="rounded text-neutral-400">
-          {filteredCards.length}
-        </span>
+        <span className="rounded text-neutral-400">{filteredCards.length}</span>
       </div>
       <div
         onDrop={handleDragEnd}
@@ -238,7 +310,16 @@ type CardProps = CardType & {
   handleDragStart: Function;
 };
 
-const Card = ({ title, id, column, type, status, priority, severity, handleDragStart }: CardProps) => {
+const Card = ({
+  title,
+  id,
+  column,
+  type,
+  status,
+  priority,
+  severity,
+  handleDragStart,
+}: CardProps) => {
   return (
     <>
       <DropIndicator beforeId={id} column={column} />
@@ -246,21 +327,30 @@ const Card = ({ title, id, column, type, status, priority, severity, handleDragS
         layout
         layoutId={id}
         draggable="true"
-        onDragStart={(e) => handleDragStart(e, { title, id, column, type, status, priority })}
+        onDragStart={(e) =>
+          handleDragStart(e, {
+            title,
+            id,
+            column,
+            type,
+            status,
+            priority,
+            severity,
+          })
+        }
         className="cursor-grab rounded border border-neutral-700 bg-neutral-800 p-3 active:cursor-grabbing"
       >
         <p className="text-sm font-semibold text-neutral-100">{title}</p>
         <div className="mt-2 flex flex-col gap-1 text-xs text-neutral-400">
-          <span>🧩 {TaskTypeCopy[type]}</span>
-          <span>🚦 {TaskWorkflowStatusCopy[status]}</span>
-          <span>⚡ {TaskPriorityCopy[priority]}</span>
+          <span>🧩 {type}</span>
+          <span>🚦 {status}</span>
+          <span>⚡ {priority}</span>
           <span>🔥 {severity}</span>
         </div>
       </motion.div>
     </>
   );
 };
-
 
 type DropIndicatorProps = {
   beforeId: string | null;
@@ -295,11 +385,12 @@ const BurnBarrel = ({
 
   const handleDragEnd = (e: DragEvent) => {
     const cardId = e.dataTransfer.getData("cardId");
-    setCards((prev) => {
-      const updatedCards = prev.filter((c: CardType) => c.id !== cardId);
-      updateBackend(updatedCards);
-      return updatedCards;
-    });
+
+    // Use deleteTask instead of direct modification
+    deleteTask(cardId);
+    console.log(`Deleted task ${cardId}`);
+
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
     setActive(false);
   };
 
@@ -333,21 +424,68 @@ const AddCard = ({ column, setCards }: AddCardProps) => {
 
     if (!text.trim().length) return;
 
-    const newCard: CardType = {
-      id: Math.random().toString(),
-      title: text.trim(),
-      column,
-      type: TaskType.TASK, // Default
-      status: TaskWorkflowStatus.BACKLOG, // Default
-      priority: TaskPriority.P3, // Default
+    // Generate a new task ID
+    const taskId = `TASK-${mockTasks.length + 1}`;
+
+    // Map column to status
+    const status = columnToStatus(column);
+
+    // Create a new task in mockTasks using complete Task interface requirements
+    const newTask: Task = {
+      id: taskId,
+      problem_statement: text.trim(),
+      description: text.trim(),
+      type: TaskType.TASK,
+      status: status,
+      priority: TaskPriority.P3,
+      severity: TaskSeverity.MEDIUM,
+      story_points: 3,
+      estimated_hours: 4,
+      actual_hours: 0,
+      deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
+      project:
+        mockTasks.length > 0
+          ? mockTasks[0].project
+          : mockTasks[0]?.project || {
+              id: "default-project",
+              name: "Default Project",
+              description: "Default project for new tasks",
+              employees: [],
+              tasks: [],
+              sprints: [],
+              deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              created_at: new Date(),
+              updated_at: new Date(),
+              required_action_privilege: {
+                id: "1",
+                name: "Admin",
+                level: 1,
+              } as any,
+            },
+      associated_files: [],
+      pre_requisite_tasks: [],
+      dependent_tasks: [],
+      blocked: false,
+      status_change_events: [],
+      comments: [],
+      files: [],
+      created_at: new Date(),
+      updated_at: new Date(),
+      required_action_privilege:
+        mockTasks.length > 0
+          ? mockTasks[0].required_action_privilege
+          : ({ id: "1", name: "TeamMember", level: 1 } as any),
     };
 
-    setCards((prev) => {
-      const updatedCards = [...prev, newCard];
-      updateBackend(updatedCards);
-      return updatedCards;
-    });
+    // Add to mockTasks and store in localStorage
+    const addedTask = addTask(newTask);
+    console.log(`Created new task: ${addedTask.id}`);
 
+    // Convert to card and add to UI
+    const newCard = taskToCard(newTask);
+    setCards((prev) => [...prev, newCard]);
+
+    setText("");
     setAdding(false);
   };
 
@@ -400,100 +538,5 @@ type CardType = {
   type: TaskType;
   status: TaskWorkflowStatus;
   priority: TaskPriority;
-  severity: string;
+  severity: TaskSeverity;
 };
-
-
-const DEFAULT_CARDS: CardType[] = [
-  {
-    title: "Look into render bug in dashboard",
-    id: "1",
-    column: "backlog",
-    type: TaskType.BUG,
-    status: TaskWorkflowStatus.BACKLOG,
-    priority: TaskPriority.P2,
-    severity: TaskSeverity.CRITICAL,
-  },
-  {
-    title: "SOX compliance checklist",
-    id: "2",
-    column: "backlog",
-    type: TaskType.TASK,
-    status: TaskWorkflowStatus.BACKLOG,
-    priority: TaskPriority.P3,
-    severity: TaskSeverity.MEDIUM,
-  },
-  {
-    title: "[SPIKE] Migrate to Azure",
-    id: "3",
-    column: "backlog",
-    type: TaskType.STORY,
-    status: TaskWorkflowStatus.BACKLOG,
-    priority: TaskPriority.P4,
-    severity: TaskSeverity.LOW,
-  },
-  {
-    title: "Document Notifications service",
-    id: "4",
-    column: "backlog",
-    type: TaskType.TASK,
-    status: TaskWorkflowStatus.BACKLOG,
-    priority: TaskPriority.P5,
-    severity: TaskSeverity.LOW,
-  },
-  {
-    title: "Research DB options for new microservice",
-    id: "5",
-    column: "todo",
-    type: TaskType.STORY,
-    status: TaskWorkflowStatus.SELECTED,
-    priority: TaskPriority.P2,
-    severity: TaskSeverity.MEDIUM,
-  },
-  {
-    title: "Postmortem for outage",
-    id: "6",
-    column: "todo",
-    type: TaskType.TASK,
-    status: TaskWorkflowStatus.SELECTED,
-    priority: TaskPriority.P1,
-    severity: TaskSeverity.CRITICAL,
-  },
-  {
-    title: "Sync with product on Q3 roadmap",
-    id: "7",
-    column: "todo",
-    type: TaskType.STORY,
-    status: TaskWorkflowStatus.SELECTED,
-    priority: TaskPriority.P3,
-    severity: TaskSeverity.LOW,
-  },
-  {
-    title: "Refactor context providers to use Zustand",
-    id: "8",
-    column: "doing",
-    type: TaskType.TASK,
-    status: TaskWorkflowStatus.IN_PROGRESS,
-    priority: TaskPriority.P2,
-    severity: TaskSeverity.HIGH,
-  },
-  {
-    title: "Add logging to daily CRON",
-    id: "9",
-    column: "doing",
-    type: TaskType.BUG,
-    status: TaskWorkflowStatus.IN_PROGRESS,
-    priority: TaskPriority.P1,
-    severity: TaskSeverity.CRITICAL,
-  },
-  {
-    title: "Set up DD dashboards for Lambda listener",
-    id: "10",
-    column: "done",
-    type: TaskType.TASK,
-    status: TaskWorkflowStatus.DONE,
-    priority: TaskPriority.P4,
-    severity: TaskSeverity.MEDIUM,
-  },
-];
-

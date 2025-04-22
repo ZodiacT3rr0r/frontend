@@ -5,10 +5,7 @@ import {
   useEffect,
   ComponentType,
 } from "react";
-import {
-  FiChevronsRight,
-  FiHome,
-} from "react-icons/fi";
+import { FiChevronsRight, FiHome } from "react-icons/fi";
 import { FaTasks } from "react-icons/fa";
 import { GoProjectRoadmap } from "react-icons/go";
 import { IoAnalyticsSharp, IoAddOutline } from "react-icons/io5";
@@ -22,6 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+
+// Import mockProjects from mockdata
+import { mockProjects } from "../data/mockdata";
 
 export const Navbar = () => {
   return (
@@ -41,7 +41,10 @@ const Sidebar = () => {
     sessionStorage.getItem("selectedMenu") || "Dashboard"
   );
 
-  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(() => {
+  const [selectedProject, setSelectedProject] = useState<{
+    id: string;
+    name: string;
+  } | null>(() => {
     const stored = sessionStorage.getItem("selectedProject");
     return stored ? JSON.parse(stored) : null;
   });
@@ -110,8 +113,8 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="sticky top-0 h-screen shrink-0 bg-blue-950 p-2"
-      style={{ width: open ? "225px" : "fit-content" }}
+      className="sticky top-0 h-screen shrink-0 bg-blue-950 p-2 overflow-hidden"
+      style={{ width: open ? "260px" : "fit-content" }}
     >
       <ProjectDropdown
         open={open}
@@ -207,20 +210,29 @@ const ProjectDropdown = ({
 }: {
   open: boolean;
   selectedProject: { id: string; name: string } | null;
-  setSelectedProject: Dispatch<SetStateAction<{ id: string; name: string } | null>>;
+  setSelectedProject: Dispatch<
+    SetStateAction<{ id: string; name: string } | null>
+  >;
 }) => {
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    fetch("")
-      .then((res) => res.json())
-      .then((data) => {
-        const dummyProjects = data.products.map((prod: any) => ({
-          id: prod.id.toString(),
-          name: prod.title,
-        }));
-        setProjects(dummyProjects);
-      });
+    // Use mockProjects directly instead of fetching from an empty URL
+    const projectsData = mockProjects.map((project) => ({
+      id: project.id,
+      name: project.name,
+    }));
+
+    setProjects(projectsData);
+
+    // If no project is selected yet, select the first one
+    if (!selectedProject && projectsData.length > 0) {
+      setSelectedProject(projectsData[0]);
+      sessionStorage.setItem(
+        "selectedProject",
+        JSON.stringify(projectsData[0])
+      );
+    }
   }, []);
 
   return (
@@ -228,21 +240,32 @@ const ProjectDropdown = ({
       <div className="flex items-center gap-2 rounded-md">
         <Logo />
         {open && (
-          <div className="flex-grow">
+          <div className="flex-grow w-full">
             <Select
               value={selectedProject?.id || ""}
               onValueChange={(value) => {
                 const project = projects.find((p) => p.id === value);
                 setSelectedProject(project || null);
-                sessionStorage.setItem("selectedProject", JSON.stringify(project));
+                sessionStorage.setItem(
+                  "selectedProject",
+                  JSON.stringify(project)
+                );
               }}
             >
               <SelectTrigger className="w-full bg-blue-950 text-white border border-white hover:bg-blue-900">
-                <SelectValue placeholder="Select project" />
+                <SelectValue
+                  placeholder="Select project"
+                  className="truncate max-w-[150px]"
+                />
               </SelectTrigger>
-              <SelectContent className="bg-white text-black">
+              <SelectContent
+                className="bg-white text-black w-full max-w-[230px]"
+                position="popper"
+                sideOffset={-15}
+                align="start"
+              >
                 {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
+                  <SelectItem key={p.id} value={p.id} className="truncate">
                     {p.name}
                   </SelectItem>
                 ))}
