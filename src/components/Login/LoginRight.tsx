@@ -22,6 +22,20 @@ type HeaderProps = {
 
 // Components
 const AuthOptions: React.FC<AuthOptionsProps> = ({ option, selected }) => {
+
+  const handleLogin = async () => {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+  
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('role', data.user.role); // <-- store role
+    // optionally store other info too
+  };
+
+  
   return (
     <div className="flex flex-col items-center py-6 px-14 gap-4">
 
@@ -40,7 +54,7 @@ const AuthOptions: React.FC<AuthOptionsProps> = ({ option, selected }) => {
         </>
       )}
       
-      <button className="mt-4 px-6 py-2 bg-blue-600 font-semibold text-white rounded-lg cursor-pointer">
+      <button onClick={handleLogin} className="mt-4 px-6 py-2 bg-blue-600 font-semibold text-white rounded-lg cursor-pointer">
         {selected === "Login" ? "Login" : "Sign Up"}
       </button>
 

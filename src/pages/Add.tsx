@@ -11,6 +11,7 @@ import { Calendar } from "@components/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/components/ui/popover";
 import { format } from "date-fns"
 import { useState, useEffect } from "react"
+import MarkdownEditor from "../components/Input/MarkdownEditor";
 
 import {
   IssueType,
@@ -53,9 +54,9 @@ const fetchEmployees = async () => {
   return data.employees;
 };
 
-export const Add = () => {
+export const Add = () => {  
   return (
-    <div className="w-full h-screen p-16">
+    <div className="w-full h-screen p-16 overflow-auto">
       <AddTaskForm />
     </div>
   );
@@ -66,9 +67,56 @@ const AddTaskForm = () => {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Form Data:", data);
+  const onSubmit = async (data: FormValues) => {
+    try {
+      const formData = new FormData();
+      
+      formData.append("projectId", data.projectId);
+      formData.append("assigneeId", data.assigneeId);
+      formData.append("issueType", data.issueType);
+      formData.append("priority", data.priority);
+      formData.append("deadline", format(data.deadline, "yyyy-MM-dd'T'HH:mm:ss"));
+      formData.append("description", data.description);
+      formData.append("storyPoints", String(data.storyPoints));
+      formData.append("estimatedHours", String(data.estimatedHours));
+      formData.append("status", data.status);
+      formData.append("blocked", String(data.blocked));
+  
+      if (data.blocked && data.blockedReason) {
+        formData.append("blockedReason", data.blockedReason);
+      }
+  
+      if (files.length > 0) {
+        files.forEach(file => formData.append("attachedFiles", file));
+      }
+  
+      // If there are pre-requisite or dependent tasks, append them as well
+      if (data.preRequisiteTasks) {
+        data.preRequisiteTasks.forEach(taskId => formData.append("preRequisiteTasks", taskId));
+      }
+      if (data.dependentTasks) {
+        data.dependentTasks.forEach(taskId => formData.append("dependentTasks", taskId));
+      }
+  
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error("Task creation failed");
+      }
+  
+      const responseData = await response.json();
+      console.log("Task Created Successfully:", responseData);
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
   };
+  
 
   const [projects, setProjects] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -81,46 +129,48 @@ const AddTaskForm = () => {
   }, []);
 
   return (
-    <Card className="bg-black text-white max-w-[700px] mx-auto p-4">
+    <Card className="bg-black text-white max-w-[1200px] min-w-[700px] mx-auto p-4 ">
       <CardHeader>
         <CardTitle className="text-2xl">Create Task</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Project Selection */}
-          <div>
-            <Label className="mb-2">Project</Label>
-            <Select onValueChange={(value) => setValue("projectId", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map(proj => (
-                  <SelectItem key={proj.id} value={proj.id}>{proj.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.projectId && <p className="text-red-500 text-sm">{errors.projectId.message}</p>}
-          </div>
+          <div className="flex gap-4">
+            {/* Project Selection */}
+            <div>
+              <Label className="mb-2">Project</Label>
+              <Select onValueChange={(value) => setValue("projectId", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(proj => (
+                    <SelectItem key={proj.id} value={proj.id}>{proj.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.projectId && <p className="text-red-500 text-sm">{errors.projectId.message}</p>}
+            </div>
 
-          {/* Assignee Selection */}
-          <div>
-            <Label className="mb-2">Assignee</Label>
-            <Select onValueChange={(value) => setValue("assigneeId", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Assignee" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map(emp => (
-                  <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.assigneeId && <p className="text-red-500 text-sm">{errors.assigneeId.message}</p>}
+            {/* Assignee Selection */}
+            <div>
+              <Label className="mb-2">Assignee</Label>
+              <Select onValueChange={(value) => setValue("assigneeId", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.assigneeId && <p className="text-red-500 text-sm">{errors.assigneeId.message}</p>}
+            </div>
           </div>
 
           {/* Issue Type & Priority */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex gap-4">
             <div>
               <Label className="mb-2">Issue Type</Label>
               <Select onValueChange={(value) => setValue("issueType", value as IssueType)}>
@@ -147,60 +197,65 @@ const AddTaskForm = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Deadline */}
+            <div>
+              <Label className="mb-2">Deadline</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full flex justify-between items-center bg-black hover:bg-black hover:text-white">
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    <CalendarIcon className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-black text-white" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(selectedDate) => {
+                      if (selectedDate) {
+                        setDate(selectedDate);
+                        setValue("deadline", selectedDate, { shouldValidate: true });
+                      }
+                    }}
+                    disabled={(d) => d <= new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.deadline && <p className="text-red-500 text-sm">{errors.deadline.message}</p>}
+            </div>
+            {/* Status */}
+            <div>
+              <Label className="mb-2">Status</Label>
+              <Select onValueChange={(value) => setValue("status", value as TaskStatus)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(TaskStatus).map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Deadline */}
-          <div>
-            <Label className="mb-2">Deadline</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full flex justify-between items-center">
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(selectedDate) => {
-                    if (selectedDate) {
-                      setDate(selectedDate);
-                      setValue("deadline", selectedDate, { shouldValidate: true });
-                    }
-                  }}
-                  disabled={(d) => d <= new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.deadline && <p className="text-red-500 text-sm">{errors.deadline.message}</p>}
-          </div>
+          
 
           {/* Description */}
-          <div>
+          <div className="text-white">
             <Label className="mb-2">Description</Label>
-            <Textarea {...register("description")} className="w-full" placeholder="Enter task description..." />
+            <MarkdownEditor
+              defaultValue={watch("description")}
+              onChange={(content) => setValue("description", content, { shouldValidate: true })}
+              placeholder="Enter task description..."
+            />
             {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
           </div>
 
-          {/* Status */}
-          <div>
-            <Label className="mb-2">Status</Label>
-            <Select onValueChange={(value) => setValue("status", value as TaskStatus)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(TaskStatus).map(status => (
-                  <SelectItem key={status} value={status}>{status}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Blocked Checkbox */}
-          <div>
+          <div className="flex">
             <input type="checkbox" {...register("blocked")} id="blocked" />
             <Label htmlFor="blocked" className="ml-2">Blocked</Label>
           </div>

@@ -33,7 +33,7 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "moduleDetection": "force"
   },
   "include": ["src", "src/**/*.ts", "src/**/*.tsx"],

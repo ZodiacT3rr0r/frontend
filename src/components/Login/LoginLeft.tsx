@@ -1,5 +1,5 @@
-import Plane from "@components/Misc/911";
-import Radar from "@components/Misc/Radar";
+// import Plane from "@components/Misc/911";
+// import Radar from "@components/Misc/Radar";
 
 const LoginLeft = () => {
 
@@ -44,13 +44,13 @@ const LoginLeft = () => {
         </div>
       </div>
 
-      <div className="absolute top-0 right-0">
+      {/* <div className="absolute top-0 right-0">
         <Plane />
       </div>
 
       <div className="absolute bottom-0 left-0 p-8">
         <Radar />
-      </div>
+      </div> */}
     </div>
   );
 }
